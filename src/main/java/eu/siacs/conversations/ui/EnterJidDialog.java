@@ -1,24 +1,231 @@
 package eu.siacs.conversations.ui;
 
-import android.app.AlertDialog;
+import android.app.Activity;
 import android.app.Dialog;
-import android.content.Context;
-import android.view.LayoutInflater;
+import android.databinding.DataBindingUtil;
+import android.os.Bundle;
+import android.support.annotation.NonNull;
+import android.support.v4.app.DialogFragment;
+import android.support.v7.app.AlertDialog;
+import android.text.Editable;
+import android.text.TextWatcher;
 import android.view.View;
 import android.widget.ArrayAdapter;
-import android.widget.AutoCompleteTextView;
-import android.widget.Spinner;
-import android.widget.TextView;
 
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Collection;
+import java.util.Collections;
 import java.util.List;
 
 import eu.siacs.conversations.Config;
 import eu.siacs.conversations.R;
+import eu.siacs.conversations.databinding.EnterJidDialogBinding;
 import eu.siacs.conversations.ui.adapter.KnownHostsAdapter;
-import eu.siacs.conversations.xmpp.jid.InvalidJidException;
-import eu.siacs.conversations.xmpp.jid.Jid;
+import eu.siacs.conversations.ui.interfaces.OnBackendConnected;
+import eu.siacs.conversations.ui.util.DelayedHintHelper;
+import rocks.xmpp.addr.Jid;
 
-public class EnterJidDialog {
+public class EnterJidDialog extends DialogFragment implements OnBackendConnected, TextWatcher {
+
+
+	private static final List<String> SUSPICIOUS_DOMAINS = Arrays.asList("conference","muc","room","rooms","chat");
+
+	private OnEnterJidDialogPositiveListener mListener = null;
+
+	private static final String TITLE_KEY = "title";
+	private static final String POSITIVE_BUTTON_KEY = "positive_button";
+	private static final String PREFILLED_JID_KEY = "prefilled_jid";
+	private static final String ACCOUNT_KEY = "account";
+	private static final String ALLOW_EDIT_JID_KEY = "allow_edit_jid";
+	private static final String ACCOUNTS_LIST_KEY = "activated_accounts_list";
+	private static final String SANITY_CHECK_JID = "sanity_check_jid";
+
+	private KnownHostsAdapter knownHostsAdapter;
+	private Collection<String> whitelistedDomains = Collections.emptyList();
+
+	private EnterJidDialogBinding binding;
+	private AlertDialog dialog;
+	private boolean sanityCheckJid = false;
+
+
+	private boolean issuedWarning = false;
+
+	public static EnterJidDialog newInstance(final List<String> activatedAccounts,
+	                                         final String title, final String positiveButton,
+	                                         final String prefilledJid, final String account,
+											 boolean allowEditJid, final boolean sanity_check_jid) {
+		EnterJidDialog dialog = new EnterJidDialog();
+		Bundle bundle = new Bundle();
+		bundle.putString(TITLE_KEY, title);
+		bundle.putString(POSITIVE_BUTTON_KEY, positiveButton);
+		bundle.putString(PREFILLED_JID_KEY, prefilledJid);
+		bundle.putString(ACCOUNT_KEY, account);
+		bundle.putBoolean(ALLOW_EDIT_JID_KEY, allowEditJid);
+		bundle.putStringArrayList(ACCOUNTS_LIST_KEY, (ArrayList<String>) activatedAccounts);
+		bundle.putBoolean(SANITY_CHECK_JID, sanity_check_jid);
+		dialog.setArguments(bundle);
+		return dialog;
+	}
+
+	@Override
+	public void onActivityCreated(Bundle savedInstanceState) {
+		super.onActivityCreated(savedInstanceState);
+		setRetainInstance(true);
+	}
+
+	@Override
+	public void onStart() {
+		super.onStart();
+		final Activity activity = getActivity();
+		if (activity instanceof XmppActivity && ((XmppActivity) activity).xmppConnectionService != null) {
+			refreshKnownHosts();
+		}
+	}
+
+	@NonNull
+	@Override
+	public Dialog onCreateDialog(Bundle savedInstanceState) {
+		final AlertDialog.Builder builder = new AlertDialog.Builder(getActivity());
+		builder.setTitle(getArguments().getString(TITLE_KEY));
+		binding = DataBindingUtil.inflate(getActivity().getLayoutInflater(), R.layout.enter_jid_dialog, null, false);
+		this.knownHostsAdapter = new KnownHostsAdapter(getActivity(), R.layout.simple_list_item);
+		binding.jid.setAdapter(this.knownHostsAdapter);
+		binding.jid.addTextChangedListener(this);
+		String prefilledJid = getArguments().getString(PREFILLED_JID_KEY);
+		if (prefilledJid != null) {
+			binding.jid.append(prefilledJid);
+			if (!getArguments().getBoolean(ALLOW_EDIT_JID_KEY)) {
+				binding.jid.setFocusable(false);
+				binding.jid.setFocusableInTouchMode(false);
+				binding.jid.setClickable(false);
+				binding.jid.setCursorVisible(false);
+			}
+		}
+		sanityCheckJid = getArguments().getBoolean(SANITY_CHECK_JID, false);
+
+		DelayedHintHelper.setHint(R.string.account_settings_example_jabber_id, binding.jid);
+
+		String account = getArguments().getString(ACCOUNT_KEY);
+		if (account == null) {
+			StartConversationActivity.populateAccountSpinner(getActivity(), getArguments().getStringArrayList(ACCOUNTS_LIST_KEY), binding.account);
+		} else {
+			ArrayAdapter<String> adapter = new ArrayAdapter<>(getActivity(),
+					R.layout.simple_list_item,
+					new String[]{account});
+			binding.account.setEnabled(false);
+			adapter.setDropDownViewResource(R.layout.simple_list_item);
+			binding.account.setAdapter(adapter);
+		}
+
+
+
+		builder.setView(binding.getRoot());
+		builder.setNegativeButton(R.string.cancel, null);
+		builder.setPositiveButton(getArguments().getString(POSITIVE_BUTTON_KEY), null);
+		this.dialog = builder.create();
+
+		View.OnClickListener dialogOnClick = v -> {
+			handleEnter(binding, account);
+		};
+
+		binding.jid.setOnEditorActionListener((v, actionId, event) -> {
+			handleEnter(binding, account);
+			return true;
+		});
+
+		dialog.show();
+		dialog.getButton(AlertDialog.BUTTON_POSITIVE).setOnClickListener(dialogOnClick);
+		return dialog;
+	}
+
+	private void handleEnter(EnterJidDialogBinding binding, String account) {
+		final Jid accountJid;
+		if (!binding.account.isEnabled() && account == null) {
+			return;
+		}
+		try {
+			if (Config.DOMAIN_LOCK != null) {
+				accountJid = Jid.of((String) binding.account.getSelectedItem(), Config.DOMAIN_LOCK, null);
+			} else {
+				accountJid = Jid.of((String) binding.account.getSelectedItem());
+			}
+		} catch (final IllegalArgumentException e) {
+			return;
+		}
+		final Jid contactJid;
+		try {
+			contactJid = Jid.of(binding.jid.getText().toString());
+		} catch (final IllegalArgumentException e) {
+			binding.jidLayout.setError(getActivity().getString(R.string.invalid_jid));
+			return;
+		}
+
+		if (!issuedWarning && sanityCheckJid) {
+			if (contactJid.isDomainJid()) {
+				binding.jidLayout.setError(getActivity().getString(R.string.this_looks_like_a_domain));
+				dialog.getButton(AlertDialog.BUTTON_POSITIVE).setText(R.string.add_anway);
+				issuedWarning = true;
+				return;
+			}
+			if (suspiciousSubDomain(contactJid.getDomain())) {
+				binding.jidLayout.setError(getActivity().getString(R.string.this_looks_like_channel));
+				dialog.getButton(AlertDialog.BUTTON_POSITIVE).setText(R.string.add_anway);
+				issuedWarning = true;
+				return;
+			}
+		}
+
+		if (mListener != null) {
+			try {
+				if (mListener.onEnterJidDialogPositive(accountJid, contactJid)) {
+					dialog.dismiss();
+				}
+			} catch (JidError error) {
+				binding.jidLayout.setError(error.toString());
+				dialog.getButton(AlertDialog.BUTTON_POSITIVE).setText(R.string.add);
+				issuedWarning = false;
+			}
+		}
+	}
+
+	public void setOnEnterJidDialogPositiveListener(OnEnterJidDialogPositiveListener listener) {
+		this.mListener = listener;
+	}
+
+	@Override
+	public void onBackendConnected() {
+		refreshKnownHosts();
+	}
+
+	private void refreshKnownHosts() {
+		Activity activity = getActivity();
+		if (activity instanceof XmppActivity) {
+			Collection<String> hosts = ((XmppActivity) activity).xmppConnectionService.getKnownHosts();
+			this.knownHostsAdapter.refresh(hosts);
+			this.whitelistedDomains = hosts;
+		}
+	}
+
+	@Override
+	public void beforeTextChanged(CharSequence s, int start, int count, int after) {
+
+	}
+
+	@Override
+	public void onTextChanged(CharSequence s, int start, int before, int count) {
+
+	}
+
+	@Override
+	public void afterTextChanged(Editable s) {
+		if (issuedWarning) {
+			dialog.getButton(AlertDialog.BUTTON_POSITIVE).setText(R.string.add);
+			binding.jidLayout.setError(null);
+			issuedWarning = false;
+		}
+	}
+
 	public interface OnEnterJidDialogPositiveListener {
 		boolean onEnterJidDialogPositive(Jid account, Jid contact) throws EnterJidDialog.JidError;
 	}
@@ -35,95 +242,20 @@ public class EnterJidDialog {
 		}
 	}
 
-	protected final AlertDialog dialog;
-	protected View.OnClickListener dialogOnClick;
-	protected OnEnterJidDialogPositiveListener listener = null;
-
-	public EnterJidDialog(
-		final Context context, List<String> knownHosts, final List<String> activatedAccounts,
-		final String title, final String positiveButton,
-		final String prefilledJid, final String account, boolean allowEditJid
-	) {
-		AlertDialog.Builder builder = new AlertDialog.Builder(context);
-		builder.setTitle(title);
-		View dialogView = LayoutInflater.from(context).inflate(R.layout.enter_jid_dialog, null);
-		final TextView jabberIdDesc = (TextView) dialogView.findViewById(R.id.jabber_id);
-		jabberIdDesc.setText(R.string.account_settings_jabber_id);
-		final Spinner spinner = (Spinner) dialogView.findViewById(R.id.account);
-		final AutoCompleteTextView jid = (AutoCompleteTextView) dialogView.findViewById(R.id.jid);
-		jid.setAdapter(new KnownHostsAdapter(context, R.layout.simple_list_item, knownHosts));
-		if (prefilledJid != null) {
-			jid.append(prefilledJid);
-			if (!allowEditJid) {
-				jid.setFocusable(false);
-				jid.setFocusableInTouchMode(false);
-				jid.setClickable(false);
-				jid.setCursorVisible(false);
-			}
+	@Override
+	public void onDestroyView() {
+		Dialog dialog = getDialog();
+		if (dialog != null && getRetainInstance()) {
+			dialog.setDismissMessage(null);
 		}
-
-		jid.setHint(R.string.account_settings_example_jabber_id);
-
-		if (account == null) {
-			StartConversationActivity.populateAccountSpinner(context, activatedAccounts, spinner);
-		} else {
-			ArrayAdapter<String> adapter = new ArrayAdapter<>(context,
-					R.layout.simple_list_item,
-					new String[] { account });
-			spinner.setEnabled(false);
-			adapter.setDropDownViewResource(R.layout.simple_list_item);
-			spinner.setAdapter(adapter);
-		}
-
-		builder.setView(dialogView);
-		builder.setNegativeButton(R.string.cancel, null);
-		builder.setPositiveButton(positiveButton, null);
-		this.dialog = builder.create();
-
-		this.dialogOnClick = new View.OnClickListener() {
-			@Override
-			public void onClick(final View v) {
-				final Jid accountJid;
-				if (!spinner.isEnabled() && account == null) {
-					return;
-				}
-				try {
-					if (Config.DOMAIN_LOCK != null) {
-						accountJid = Jid.fromParts((String) spinner.getSelectedItem(), Config.DOMAIN_LOCK, null);
-					} else {
-						accountJid = Jid.fromString((String) spinner.getSelectedItem());
-					}
-				} catch (final InvalidJidException e) {
-					return;
-				}
-				final Jid contactJid;
-				try {
-					contactJid = Jid.fromString(jid.getText().toString());
-				} catch (final InvalidJidException e) {
-					jid.setError(context.getString(R.string.invalid_jid));
-					return;
-				}
-
-				if(listener != null) {
-					try {
-						if(listener.onEnterJidDialogPositive(accountJid, contactJid)) {
-							dialog.dismiss();
-						}
-					} catch(JidError error) {
-						jid.setError(error.toString());
-					}
-				}
-			}
-		};
+		super.onDestroyView();
 	}
 
-	public void setOnEnterJidDialogPositiveListener(OnEnterJidDialogPositiveListener listener) {
-		this.listener = listener;
-	}
-
-	public Dialog show() {
-		this.dialog.show();
-		this.dialog.getButton(AlertDialog.BUTTON_POSITIVE).setOnClickListener(this.dialogOnClick);
-		return this.dialog;
+	private boolean suspiciousSubDomain(String domain) {
+		if (this.whitelistedDomains.contains(domain)) {
+			return false;
+		}
+		final String[] parts = domain.split("\\.");
+		return parts.length >= 3 && SUSPICIOUS_DOMAINS.contains(parts[0]);
 	}
 }

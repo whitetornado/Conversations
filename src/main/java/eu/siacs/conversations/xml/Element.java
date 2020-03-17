@@ -1,15 +1,15 @@
 package eu.siacs.conversations.xml;
 
-import android.util.Log;
-
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.Hashtable;
 import java.util.List;
+import java.util.Locale;
 
-import eu.siacs.conversations.Config;
 import eu.siacs.conversations.utils.XmlHelper;
-import eu.siacs.conversations.xmpp.jid.InvalidJidException;
-import eu.siacs.conversations.xmpp.jid.Jid;
+import eu.siacs.conversations.xmpp.InvalidJid;
+import eu.siacs.conversations.xmpp.stanzas.MessagePacket;
+import rocks.xmpp.addr.Jid;
 
 public class Element {
 	private final String name;
@@ -67,11 +67,28 @@ public class Element {
 		return element == null ? null : element.getContent();
 	}
 
+	public LocalizedContent findInternationalizedChildContentInDefaultNamespace(String name) {
+		return LocalizedContent.get(this, name);
+	}
+
 	public Element findChild(String name, String xmlns) {
 		for (Element child : this.children) {
 			if (name.equals(child.getName()) && xmlns.equals(child.getAttribute("xmlns"))) {
 				return child;
 			}
+		}
+		return null;
+	}
+
+	public Element findChildEnsureSingle(String name, String xmlns) {
+		final List<Element> results = new ArrayList<>();
+		for (Element child : this.children) {
+			if (name.equals(child.getName()) && xmlns.equals(child.getAttribute("xmlns"))) {
+				results.add(child);
+			}
+		}
+		if (results.size() == 1) {
+			return results.get(0);
 		}
 		return null;
 	}
@@ -109,6 +126,11 @@ public class Element {
 		return this;
 	}
 
+	public Element removeAttribute(String name) {
+		this.attributes.remove(name);
+		return this;
+	}
+
 	public Element setAttributes(Hashtable<String, String> attributes) {
 		this.attributes = attributes;
 		return this;
@@ -126,10 +148,9 @@ public class Element {
 		final String jid = this.getAttribute(name);
 		if (jid != null && !jid.isEmpty()) {
 			try {
-				return Jid.fromString(jid);
-			} catch (final InvalidJidException e) {
-				Log.e(Config.LOGTAG, "could not parse jid " + jid);
-				return null;
+				return Jid.ofEscaped(jid);
+			} catch (final IllegalArgumentException e) {
+				return InvalidJid.of(jid, this instanceof MessagePacket);
 			}
 		}
 		return null;

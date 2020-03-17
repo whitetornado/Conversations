@@ -1,5 +1,287 @@
 # Changelog
 
+### Version 2.7.1
+
+* Fix avatar selection on some Android 10 devices
+* Fix file transfer for larger files
+
+### Version 2.7.0
+
+* Provide PDF preview on Android 5+
+* Use 12 byte IVs for OMEMO
+
+### Version 2.6.4
+
+* Support automatic theme switching on Android 10
+
+### Version 2.6.3
+
+* Support for ?register and ?register;preauth XMPP uri parameters
+
+### Version 2.6.2
+* let users set their own nick name
+* resume download of OMEMO encrypted files
+* Channels now use '#' as symbol in avatar
+* Quicksy uses 'always' as OMEMO encryption default (hides lock icon)
+
+### Version 2.6.1
+* fixes for Jingle IBB file transfer
+* fixes for repeated corrections filling up the database
+* switched to Last Message Correction v1.1
+
+### Version 2.6.0
+* Introduce expert setting to perform channel discovery on local server instead of [search.jabber.network](https://search.jabber.network)
+* Enable delivery check marks by default and remove setting
+* Enable ‘Send button indicates status’ by default and remove setting
+* Move Backup and Foreground Service settings to main screen
+
+### Version 2.5.12
+* Jingle file transfer fixes
+* Fixed OMEMO self healing (after backup restore) on servers w/o MAM
+
+### Version 2.5.11
+* Fixed crash on Android <5.0
+
+### Version 2.5.10
+* Fixed crash on Xiaomi devices running Android 8.0 + 8.1
+
+### Version 2.5.9
+* fixed minor security issues
+* Share XMPP uri from channel search by long pressing a result
+
+### Version 2.5.8
+* fixed connection issues over Tor
+* P2P file transfer (Jingle) now offers direct candidates
+* Support XEP-0396: Jingle Encrypted Transports - OMEMO
+
+### Version 2.5.7
+* fixed crash when scanning QR codes on Android 6 and lower
+* when sharing a message from and to Conversations insert it as quote
+
+### Version 2.5.6
+* fixes for Jingle file transfer
+* fixed some rare crashes
+
+### Version 2.5.5
+* allow backups to be restored from anywhere
+* bug fixes
+
+### Version 2.5.4
+* stability improvements for group chats and channels
+
+### Version 2.5.3
+* bug fixes for peer to peer file transfer (Jingle)
+* fixed server info for unlimited/unknown max file size
+
+### Version 2.5.2
+* bug fixes
+
+### Version 2.5.1
+* minor bug fixes
+* Set own OMEMO devices to inactive after not seeing them for 14 days. (was 7 days)
+
+### Version 2.5.0
+* Added channel search via search.jabbercat.org
+* Reworked onboarding screens
+* Warn when trying to enter domain address or channel address in Add Contact dialog
+
+### Version 2.4.3
+* Fixed display of private messages sent from another client
+* Fixed backup creation on long time installations
+
+### Version 2.4.2
+* Fix image preview on older Android version
+
+### Version 2.4.1
+* Fixed crash in message view
+
+### Version 2.4.0
+* New Backup / Restore feature
+* Clearly distinguish between (private) group chats and (public) channels
+* Redesigned participants view for group chats and channels
+* Redesigned create new contact/group chat/channel flow in Start Conversation screen
+
+
+### Version 2.3.12
+* Fixed rare crash on start up
+* Fixed avatar not being refreshed in group chats
+
+### Version 2.3.11
+* Support for Android 9 'message style' notifications
+* OMEMO stability improvements
+* Added ability to destroy group chats
+* Do not show deleted files in media browser
+* Added 'Keep Original' as video quality choice
+
+### Version 2.3.10
+* lower minimum required Android version to 4.1
+* Synchronize group chat join/leaves across multiple clients
+* Fixed sending PGP encrypted messages from quick reply
+
+### Version 2.3.9
+* OMEMO stability improvements
+* Context menu when long pressing avatar in 1:1 chat
+
+### Version 2.3.8
+* make PEP avatars public to play nice with Prosody 0.11
+* Fixed re-sending failed files in group chats
+
+### Version 2.3.7
+* long press on 'allow' or 'add back' snackbar to bring up 'reject'
+* bug fixes for Android 9
+
+### Version 2.3.6
+* Improved handling of bookmark nicks
+* Show send PM menu entry in anonymous MUCs
+
+### Version 2.3.5
+* Fixed group chat mentions when nick ends in . (dot)
+* Fixed Conversations not asking for permissions after direct share
+* Fixed CVE-2018-18467
+
+### Version 2.3.4
+* Fixed sending OMEMO files to ChatSecure
+
+### Version 2.3.3
+* Fixed connection issues with user@ip type JIDs
+
+### Version 2.3.2
+* Fixed OMEMO on Android 5.1 & 6.0
+* Added setting for video quality
+* bug fixes
+
+### Version 2.3.1
+* Stronger compression for video files
+* Use SNI on STARTTLS to fix gtalk
+* Fix Quiet Hours on Android 8+
+* Use Consistent Color Generation (XEP-0392)
+
+### Version 2.3.0
+* Preview and ask for confirmation before sending media files
+* View per conversation media files in contact and conference details screens
+* Enable foreground service by default for Android 8 (notification can be disabled by long pressing it)
+* Audio player: disable screen and switch to ear piece
+* Support TLSv1.3 (ejabberd ≤ 18.06 is incompatible with openssl 1.1.1 - Update ejabberd or downgrade openssl if you get ›Stream opening error‹)
+
+
+### Version 2.2.9
+* Store bookmarks in PEP if server has ability to convert to old bookmarks
+* Show Jabber IDs from address book in Start Conversation screen
+
+### Version 2.2.8
+* fixed regression that broke XMPP uris
+
+### Version 2.2.7
+* stability improvements
+
+### Version 2.2.6
+* support old MAM version to work with Prosody
+
+### Version 2.2.5
+* Persist MUC avatar across restarts / show in bookmarks
+* Offer Paste as quote for HTML content
+
+### Version 2.2.4
+* Use group chat name as primary identifier
+* Show group name and subject in group chat details
+* Upload group chat avatar on compatible servers
+
+### Version 2.2.3
+* Introduce Expert Setting to enable direct search
+* Introduce Paste As Quote on Android 6+
+* Fixed issues with HTTP Upload
+
+### Version 2.2.2
+* Fixed connection problems with TLS1.3 servers
+* Attempt to delete broken bundles from PEP
+* Use FCM instead of GCM
+
+### Version 2.2.1
+* improved recording quality
+* load map tiles over Tor if enabled 
+
+### Version 2.2.0
+* Integrate Voice Recorder
+* Integrate Share Location
+* Added ability to search messages
+
+### Version 2.1.4
+* bug fixes
+
+### Version 2.1.3
+* Do not process stanzas with invalid JIDs
+
+### Version 2.1.2
+* Fixed avatars not being displayed on new installs
+
+### Version 2.1.1
+* Improved start up performance
+* bug fixes
+
+### Version 2.1.0
+* Added configurable font size
+* Added global OMEMO preference
+* Added scroll to bottom button
+* Only mark visible messages as read
+
+
+### Version 2.0.0
+* OMEMO by default for everything but public group chats
+* Integrate QR code scanner (requires camera permission)
+* Removed support for OTR
+* Removed support for customizable resources
+* Removed slide out panel for conversation overview
+* Add ability to change status message
+* Highlight irregular unicode code blocks in Jabber IDs
+* Conversations now requires Android 4.4+
+
+### Version 1.23.8
+* bug fixes
+
+### Version 1.23.7
+* Improved MAM support + bug fixes
+
+### Version 1.23.6
+* Fixed crash on receiving invalid HTTP slot response
+
+### Version 1.23.5
+* improved self chat
+
+### Version 1.23.4
+* keep screen on while playing audio
+* send delivery receipts after MAM catch-up
+* reduce number of wake locks
+
+### Version 1.23.3
+* Fixed OMEMO device list not being announced
+
+### Version 1.23.2
+* Removed NFC support
+* upload Avatars as JPEG
+* reduce APK size
+
+### Version 1.23.1
+* Show icon instead of image preview in conversation overview
+* fixed loop when trying to decrypt with YubiKey
+
+### Version 1.23.0
+* Support for read markers in private, non-anonymous group chats
+
+### Version 1.22.1
+* Disable swipe to left to end conversation
+* Fixed 'No permission to access …' when opening files shared from the SD card
+* Always open URLs in new tab
+
+### Version 1.22.0
+* Text markup *bold*, _italic_,`monospace` and ~strikethrough~
+* Use same emoji style on all Android versions
+* Display emojis slightly larger within continuous text
+
+### Version 1.21.0
+* Inline player for audio messages
+* Stronger compression for long videos
+* Long press the 'add back' button to show block menu
+
 ### Version 1.20.1
 * fixed OTR encrypted file transfer
 
@@ -321,7 +603,7 @@
 ### Version 1.7.2
 * decode PGP messages in background
 
-####Versrion 1.7.1
+### Version 1.7.1
 * performance improvements when opening a conversation
 
 ### Version 1.7.0

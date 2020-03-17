@@ -1,32 +1,29 @@
 package eu.siacs.conversations.xml;
 
-import android.os.PowerManager;
-import android.os.PowerManager.WakeLock;
 import android.util.Log;
 import android.util.Xml;
 
 import org.xmlpull.v1.XmlPullParser;
 import org.xmlpull.v1.XmlPullParserException;
 
+import java.io.Closeable;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
 
 import eu.siacs.conversations.Config;
 
-public class XmlReader {
-	private XmlPullParser parser;
-	private PowerManager.WakeLock wakeLock;
+public class XmlReader implements Closeable {
+	private final XmlPullParser parser;
 	private InputStream is;
 
-	public XmlReader(WakeLock wakeLock) {
+	public XmlReader() {
 		this.parser = Xml.newPullParser();
 		try {
 			this.parser.setFeature(XmlPullParser.FEATURE_PROCESS_NAMESPACES, true);
 		} catch (XmlPullParserException e) {
 			Log.d(Config.LOGTAG, "error setting namespace feature on parser");
 		}
-		this.wakeLock = wakeLock;
 	}
 
 	public void setInputStream(InputStream inputStream) throws IOException {
@@ -52,17 +49,14 @@ public class XmlReader {
 		}
 	}
 
-	public Tag readTag() throws XmlPullParserException, IOException {
-		if (wakeLock.isHeld()) {
-			try {
-				wakeLock.release();
-			} catch (RuntimeException re) {
-				Log.d(Config.LOGTAG,"runtime exception releasing wakelock before reading tag "+re.getMessage());
-			}
-		}
+	@Override
+	public void close() {
+		this.is = null;
+	}
+
+	public Tag readTag() throws IOException {
 		try {
 			while (this.is != null && parser.next() != XmlPullParser.END_DOCUMENT) {
-				wakeLock.acquire();
 				if (parser.getEventType() == XmlPullParser.START_TAG) {
 					Tag tag = Tag.start(parser.getName());
 					final String xmlns = parser.getNamespace();
@@ -89,20 +83,11 @@ public class XmlReader {
 
 		} catch (Throwable throwable) {
 			throw new IOException("xml parser mishandled "+throwable.getClass().getSimpleName()+"("+throwable.getMessage()+")", throwable);
-		} finally {
-			if (wakeLock.isHeld()) {
-				try {
-					wakeLock.release();
-				} catch (RuntimeException re) {
-					Log.d(Config.LOGTAG,"runtime exception releasing wakelock after exception "+re.getMessage());
-				}
-			}
 		}
 		return null;
 	}
 
-	public Element readElement(Tag currentTag) throws XmlPullParserException,
-			IOException {
+	public Element readElement(Tag currentTag) throws IOException {
 		Element element = new Element(currentTag.getName());
 		element.setAttributes(currentTag.getAttributes());
 		Tag nextTag = this.readTag();

@@ -16,7 +16,6 @@
         android:layout_alignParentLeft="true"
         android:layout_alignParentTop="true"
         android:scaleType="fitXY"
-        android:src="@drawable/ic_profile"
         app:riv_corner_radius="2dp" />
 
     <LinearLayout
@@ -38,35 +37,7 @@
             android:orientation="vertical"
             android:padding="2dp">
 
-            <ImageView
-                android:id="@+id/message_image"
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:layout_marginTop="8dp"
-                android:layout_marginBottom="4dp"
-                android:adjustViewBounds="true"
-                android:longClickable="true"
-                android:background="@color/black87"
-                android:scaleType="centerCrop" />
-
-            <eu.siacs.conversations.ui.widget.CopyTextView
-                android:id="@+id/message_body"
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:autoLink="web"
-                android:longClickable="true"
-                android:textColorLink="@color/white"
-                android:textColor="@color/white"
-                android:textColorHighlight="@color/grey800"
-                android:textSize="?attr/TextSizeBody" />
-
-            <Button
-                android:id="@+id/download_button"
-                style="?android:attr/buttonStyleSmall"
-                android:longClickable="true"
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:visibility="gone" />
+            <include layout="@layout/message_content"/>
 
             <LinearLayout
                 android:layout_width="wrap_content"
@@ -82,14 +53,12 @@
                     android:layout_gravity="center_vertical"
                     android:gravity="center_vertical"
                     android:layout_marginRight="4sp"
-                    android:textColor="@color/white70"
-                    android:textStyle="bold"
-                    android:textSize="?attr/TextSizeInfo" />
+                    android:textAppearance="@style/TextAppearance.Conversations.Caption.OnDark.Bold"/>
 
                 <ImageView
                     android:id="@+id/security_indicator"
-                    android:layout_width="?attr/TextSizeInfo"
-                    android:layout_height="?attr/TextSizeInfo"
+                    android:layout_width="?attr/TextSizeCaption"
+                    android:layout_height="?attr/TextSizeCaption"
                     android:layout_gravity="center_vertical"
                     android:layout_marginRight="4sp"
                     android:alpha="0.70"
@@ -98,8 +67,8 @@
 
                 <ImageView
                     android:id="@+id/edit_indicator"
-                    android:layout_width="?attr/TextSizeInfo"
-                    android:layout_height="?attr/TextSizeInfo"
+                    android:layout_width="?attr/TextSizeCaption"
+                    android:layout_height="?attr/TextSizeCaption"
                     android:layout_gravity="center_vertical"
                     android:layout_marginRight="4sp"
                     android:alpha="0.70"
@@ -113,8 +82,7 @@
                     android:layout_gravity="center_vertical"
                     android:gravity="center_vertical"
                     android:text="@string/sending"
-                    android:textColor="@color/white70"
-                    android:textSize="?attr/TextSizeInfo" />
+                    android:textAppearance="@style/TextAppearance.Conversations.Caption"/>
             </LinearLayout>
         </LinearLayout>
     </LinearLayout>
